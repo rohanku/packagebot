@@ -3,7 +3,9 @@
 #define SERVO_1 13
 #define PULSE_MIN 500
 #define PULSE_MAX 2500
+#define PULSE_PERIOD 20000
 #define RANGE 270
+#define DELIMITER '\n'
 
 const char* ssid = "aurora2";
 const char* password =  "b0r3@l1s";
@@ -13,28 +15,39 @@ IPAddress subnet(255, 255, 0, 0);
 WiFiServer wifiServer(80);
 WiFiClient client;
 
-unsigned long pulseStart = -1;
+unsigned long pulseStart = 0;
 unsigned long pulseLength;
 
-void processReceivedValue(char command){
- 
-  if(command == '1'){ turnServo(SERVO_1, 0); }
-  else if(command == '0'){ turnServo(SERVO_1, 180);}
+String command = "";
+unsigned long command_index = 0;
+
+void processReceivedValue(char b){
+  if(b == DELIMITER){
+    int angle = command.toInt();
+    String debug = String("Turning servo: ") + angle;
+    Serial.println(debug);
+    turnServo(SERVO_1, angle);
+    command = "";
+  }
+  else if('0' <= b && b <= '9'){
+    command.concat(b);
+  } else {
+    command = "";
+  }
  
   return;
 }
 
-void turnServo(int pin, double angle) {
-  if (pulseStart >= 0) return;
-  pulseStart = micros();
+void turnServo(int pin, int angle) {
+  unsigned long curr_t = micros();
+  if (pulseStart + PULSE_PERIOD > curr_t) return;
+  pulseStart = curr_t;
   pulseLength = PULSE_MIN + (PULSE_MAX - PULSE_MIN) * angle/RANGE;
   digitalWrite(pin, HIGH);
 }
 
 void checkServo(int pin) {
-  if (pulseStart < 0) return;
   if (micros() > pulseStart + pulseLength) {
-    pulseStart = -1;
     digitalWrite(pin, LOW);
   }
 }
