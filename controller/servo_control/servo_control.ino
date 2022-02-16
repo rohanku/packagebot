@@ -59,6 +59,7 @@ void setup() {
 }
 
 void loop() {
+  checkServo(SERVO_1);
   if (client) {
     if (client.connected()) {
  
