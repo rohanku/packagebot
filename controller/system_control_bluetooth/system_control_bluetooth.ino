@@ -5,15 +5,37 @@
 #define PULSE_MAX 2500
 #define PULSE_PERIOD 20000
 #define RANGE 270
-#define DELIMITER '\n'
+#define DELIMITER ' '
 
-const char* ssid = "aurora2";
-const char* password =  "b0r3@l1s";
-IPAddress local_IP(192, 168, 1, 14);
-IPAddress gateway(192, 168, 1, 1);
-IPAddress subnet(255, 255, 0, 0);
-WiFiServer wifiServer(80);
-WiFiClient client;
+//This example code is in the Public Domain (or CC0 licensed, at your option.)
+//By Evandro Copercini - 2018
+//
+//This example creates a bridge between Serial and Classical Bluetooth (SPP)
+//and also demonstrate that SerialBT have the same functionalities of a normal Serial
+
+#include "BluetoothSerial.h"
+
+#if !defined(CONFIG_BT_ENABLED) || !defined(CONFIG_BLUEDROID_ENABLED)
+#error Bluetooth is not enabled! Please run `make menuconfig` to and enable it
+#endif
+
+BluetoothSerial SerialBT;
+
+/*void setup() {
+  Serial.begin(115200);
+  SerialBT.begin("ESP32test"); //Bluetooth device name
+  Serial.println("The device started, now you can pair it with bluetooth!");
+}
+
+void loop() {
+  if (Serial.available()) {
+    SerialBT.write(Serial.read());
+  }
+  if (SerialBT.available()) {
+    Serial.write(SerialBT.read());
+  }
+  delay(20);
+}*/
 
 unsigned long pulseStart = 0;
 unsigned long pulseLength;
@@ -55,37 +77,16 @@ void checkServo(int pin) {
 void setup() {
   // put your setup code here, to run once:
   Serial.begin(115200);
+  SerialBT.begin("ESP32");
   pinMode(SERVO_1, OUTPUT);
   digitalWrite(SERVO_1, LOW);
-
-  WiFi.config(local_IP, gateway, subnet);
-  WiFi.begin(ssid, password);
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(500);
-    Serial.println("Connecting to WiFi..");
-  }
-  Serial.println("Connected to WiFi");
-  Serial.println(WiFi.localIP());
- 
-  wifiServer.begin();
-  client = wifiServer.available();
 }
 
 void loop() {
   checkServo(SERVO_1);
-  if (client) {
-    if (client.connected()) {
- 
-      if (client.available()>0) {
-        char c = client.read();
-        processReceivedValue(c);
-        Serial.write(c);
-      }
-
-    } else {
-      client.stop();
-    }
-  } else {
-    client = wifiServer.available();
+  if (SerialBT.available()) {
+    char c = SerialBT.read();
+    processReceivedValue(c);
+    Serial.write(c);
   }
 }
