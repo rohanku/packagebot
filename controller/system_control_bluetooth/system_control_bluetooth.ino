@@ -55,7 +55,6 @@ unsigned long command_index = 0;
 
 void processReceivedValue(char b){
   if(b == DELIMITER){
-    Serial.println(command);
     DynamicJsonDocument doc(1024);
     deserializeJson(doc, command);
     int opcode = doc["command"];
@@ -82,6 +81,7 @@ void processReceivedValue(char b){
 }
 
 bool setupIMU() {
+  Serial.println("Setting up IMU.");
   bool success = IMU.begin();
   if (!IMU.initialize(BASIC_SETTINGS)) {
     Serial.println("Failed to load IMU settings");
@@ -92,25 +92,6 @@ bool setupIMU() {
 void sendIMUData() {
   unsigned long curr_t = millis();
   if (IMU_last_measurement + MEASUREMENT_INTERVAL > curr_t) return;
-  Serial.print("\nAccelerometer:\n");
-  Serial.print(" X = ");
-  Serial.println(IMU.readFloatAccelX(), 3);
-  Serial.print(" Y = ");
-  Serial.println(IMU.readFloatAccelY(), 3);
-  Serial.print(" Z = ");
-  Serial.println(IMU.readFloatAccelZ(), 3);
-
-  Serial.print("\nGyroscope:\n");
-  Serial.print(" X = ");
-  Serial.println(IMU.readFloatGyroX(), 3);
-  Serial.print(" Y = ");
-  Serial.println(IMU.readFloatGyroY(), 3);
-  Serial.print(" Z = ");
-  Serial.println(IMU.readFloatGyroZ(), 3);
-
-  Serial.print("\nThermometer:\n");
-  Serial.print(" Degrees F = ");
-  Serial.println(IMU.readTempF(), 3);
   DynamicJsonDocument doc(1024);
   doc["type"] = 0;
   doc["data"]["a_x"] = IMU.readFloatAccelX();
@@ -122,9 +103,7 @@ void sendIMUData() {
   doc["data"]["g_z"] = IMU.readFloatGyroZ();
   
   doc["data"]["temp"] = IMU.readTempF();
-
-  serializeJson(doc, Serial);
-  Serial.println();
+  
   serializeJson(doc, SerialBT);
   SerialBT.println();
 
@@ -132,6 +111,7 @@ void sendIMUData() {
 }
 
 void setupServos() {
+  Serial.println("Setting up servos.");
   for (int i = 0; i < NUM_SERVOS; i++) {
     pinMode(servo_pin[i], OUTPUT);
     digitalWrite(servo_pin[i], LOW);
@@ -171,9 +151,12 @@ void checkServos() {
 }
 
 void setupWindingMotor() {
+  Serial.println("Setting up winding motor.");
   pinMode(WINDING_MOTOR_1, OUTPUT);
   pinMode(WINDING_MOTOR_2, OUTPUT);
   pinMode(WINDING_MOTOR_ENABLE, OUTPUT);
+  digitalWrite(WINDING_MOTOR_1, LOW);
+  digitalWrite(WINDING_MOTOR_2, LOW);
   
   // Set up PWM channel
   ledcSetup(WINDING_MOTOR_PWM, PWM_FREQ, PWM_RES);
@@ -184,7 +167,7 @@ void setupWindingMotor() {
 
 void setWindingMotor(JsonArray arguments) {
   if (arguments.size() != 2) {
-    Serial.println("Incorrect number of arguments for turning servos");
+    Serial.println("Incorrect number of arguments for turning winding motor");
     return;
   }
   int dir = arguments[0]; // 0 - Forward, 1 - Backward, 2 - Stop
@@ -203,16 +186,21 @@ void setWindingMotor(JsonArray arguments) {
   Serial.println(buffer);
   switch (dir) {
     case 0:
+      Serial.println(WINDING_MOTOR_1);
+      Serial.println(WINDING_MOTOR_2);
       digitalWrite(WINDING_MOTOR_1, HIGH);
       digitalWrite(WINDING_MOTOR_2, LOW);
-      ledcWrite(WINDING_MOTOR_PWM, duty_cycle);   
+      ledcWrite(WINDING_MOTOR_PWM, duty_cycle);
+      break;
     case 1:
       digitalWrite(WINDING_MOTOR_1, LOW);
       digitalWrite(WINDING_MOTOR_2, HIGH);
-      ledcWrite(WINDING_MOTOR_PWM, duty_cycle); 
+      ledcWrite(WINDING_MOTOR_PWM, duty_cycle);
+      break;
     case 2:
       digitalWrite(WINDING_MOTOR_1, LOW);
       digitalWrite(WINDING_MOTOR_2, LOW);
+      break;
   }
 }
 
