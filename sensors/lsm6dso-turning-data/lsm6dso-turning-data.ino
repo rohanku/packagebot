@@ -1,6 +1,7 @@
 #include "SparkFunLSM6DSO.h"
 #include "Wire.h"
-#define ARRAY_SIZE 5500
+#define ARRAY_SIZE 1800 //this number divided by (1000/delay) is the number of seconds the program will run for :D
+#define DELAY 50 //the lower the delay, the more frequent the sampling
 //#include "SPI.h"
 
 LSM6DSO myIMU; //Default constructor is I2C, addr 0x6B
@@ -11,7 +12,7 @@ float x_accel[ARRAY_SIZE]; //forward back
 float y_accel[ARRAY_SIZE]; //left right
 float z_accel[ARRAY_SIZE]; //up down
 int counter = 0; //counter; when counter reaches falldata.length, stop adding values
-int inputPin = 7; //pin number
+int timer = 0;
 
 
 
@@ -45,8 +46,7 @@ void printall(float input[]) {
 
 void loop()
 {
-  //if we get input from the pin, barf all the data up into serial.out
-  if (digitalRead(inputPin) != LOW) {
+  if (Serial.available()) {
     delay(100);
     Serial.println("Roll");
     printall(rolldata);
@@ -61,6 +61,9 @@ void loop()
     Serial.println("ZAccel");
     printall(z_accel);
     delay(10000);
+    Serial.println("restarting...");
+    counter = 0;
+    timer = 0;
   }
 
   if (counter < ARRAY_SIZE) {
@@ -74,6 +77,7 @@ void loop()
     z_accel[counter] = myIMU.readFloatAccelZ();
     counter += 1;
   }
-  
-  delay(50);
+
+  timer += 1;
+  delay(DELAY);
 }
