@@ -1,5 +1,6 @@
 #include "SparkFunLSM6DSO.h"
 #include "Wire.h"
+#include "BluetoothSerial.h"
 #define ARRAY_SIZE 1800 //this number divided by (1000/delay) is the number of seconds the program will run for :D
 #define DELAY 50 //the lower the delay, the more frequent the sampling
 //#include "SPI.h"
@@ -14,12 +15,17 @@ float z_accel[ARRAY_SIZE]; //up down
 int counter = 0; //counter; when counter reaches falldata.length, stop adding values
 int timer = 0;
 
+#if !defined(CONFIG_BT_ENABLED) || !defined(CONFIG_BLUEDROID_ENABLED)
+#error Bluetooth is not enabled! Please run `make menuconfig` to and enable it
+#endif
 
+BluetoothSerial SerialBT;
 
 void setup() {
 
   
   Serial.begin(115200);
+  SerialBT.begin("ESP32");
   delay(500); 
 
   Wire.begin(23, 22);
@@ -40,30 +46,30 @@ void setup() {
 
 void printall(float input[]) {
   for (int i = 0; i < counter; i++) {
-    Serial.println(input[i], 3);
+    SerialBT.println(input[i], 3);
   }
 }
 
 void loop()
 {
-  if (Serial.available()) {
-    char c = Serial.read();
+  if (SerialBT.available()) {
+    char c = SerialBT.read();
     if (c == '\n')  {
       delay(100);
-      Serial.println(counter);
-      Serial.println("Roll");
+      SerialBT.println(counter);
+      SerialBT.println("Roll");
       printall(rolldata);
-      Serial.println("Pitch");
+      SerialBT.println("Pitch");
       printall(pitchdata);
-      Serial.println("Yaw");
+      SerialBT.println("Yaw");
       printall(yawdata);
-      Serial.println("XAccel");
+      SerialBT.println("XAccel");
       printall(x_accel);
-      Serial.println("YAccel");
+      SerialBT.println("YAccel");
       printall(y_accel);
-      Serial.println("ZAccel");
+      SerialBT.println("ZAccel");
       printall(z_accel);
-      Serial.println("restarting...");
+      SerialBT.println("restarting...");
     }
   }
 
