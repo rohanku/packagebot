@@ -50,6 +50,7 @@ void loop()
     char c = Serial.read();
     if (c == '\n')  {
       delay(100);
+      Serial.println(counter);
       Serial.println("Roll");
       printall(rolldata);
       Serial.println("Pitch");
@@ -63,7 +64,6 @@ void loop()
       Serial.println("ZAccel");
       printall(z_accel);
       Serial.println("restarting...");
-      counter = 0;
     }
   }
 
