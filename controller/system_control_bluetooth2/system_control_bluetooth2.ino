@@ -2,6 +2,7 @@
 #include "Wire.h"
 #include "BluetoothSerial.h"
 #include "ArduinoJson.h"
+#include <ESP32Servo.h>
 
 // IMU constants
 #define MEASUREMENT_INTERVAL 2000
@@ -9,18 +10,21 @@
 // Servo constants
 #define NUM_SERVOS 2
 const int servo_pin[] = {26, 25};
+Servo servo[2];
 const bool servo_clockwise[] = {true, false};
-#define PULSE_MIN 500
+#define PULSE_MIN 700
 #define PULSE_MAX 2500
-#define PULSE_PERIOD 20000
-#define RANGE 270
+#define SERVO_PWM_FREQ 50
+#define RANGE 180
 
 // Motor constants
 #define WINDING_MOTOR_1 13
 #define WINDING_MOTOR_2 12
 #define WINDING_MOTOR_ENABLE 27
-#define WINDING_MOTOR_PWM 0
-#define PWM_FREQ 30000
+ESP32PWM enable;
+#define MOTOR_PWM_FREQ 30000
+
+// General PWM constants
 #define PWM_RES 8
 #define DUTY_CYCLE_MAX 255
 
@@ -37,9 +41,6 @@ unsigned long IMU_last_measurement = 0;
 #endif
 
 BluetoothSerial SerialBT;
-
-unsigned long servo_pulse_start[] = {0, 0};
-unsigned long servo_pulse_length[] = {0, 0};
 
 String command = "";
 unsigned long command_index = 0;
@@ -112,9 +113,13 @@ void sendIMUData() {
 
 void setupServos() {
   Serial.println("Setting up servos.");
+  ESP32PWM::allocateTimer(0);
+  ESP32PWM::allocateTimer(1);
+  ESP32PWM::allocateTimer(2);
+  ESP32PWM::allocateTimer(3);
   for (int i = 0; i < NUM_SERVOS; i++) {
-    pinMode(servo_pin[i], OUTPUT);
-    digitalWrite(servo_pin[i], LOW);
+    servo[i].setPeriodHertz(SERVO_PWM_FREQ);
+    servo[i].attach(servo_pin[i], PULSE_MIN, PULSE_MAX);
   }
 }
 
@@ -131,38 +136,22 @@ void turnServo(JsonArray arguments) {
   if (desired_angle < 0 || desired_angle >= RANGE) {
     Serial.println("Invalid servo angle");
   }
-  int true_angle = servo_clockwise[id] ? desired_angle : 270 - desired_angle;
+  int true_angle = servo_clockwise[id] ? desired_angle : RANGE - desired_angle;
   char buffer[40];
   sprintf(buffer, "Turning servo %d: %d.", id, true_angle);
   Serial.println(buffer);
-  unsigned long curr_t = micros();
-  if (servo_pulse_start[id] + PULSE_PERIOD > curr_t) return;
-  servo_pulse_start[id] = curr_t;
-  servo_pulse_length[id] = PULSE_MIN + (PULSE_MAX - PULSE_MIN) * true_angle/RANGE;
-  digitalWrite(servo_pin[id], HIGH);
-}
-
-void checkServos() {
-  for (int i = 0; i < NUM_SERVOS; i++) {
-    if (micros() > servo_pulse_start[i] + servo_pulse_length[i]) {
-      digitalWrite(servo_pin[i], LOW);
-    }
-  }
+  servo[id].write(true_angle);
 }
 
 void setupWindingMotor() {
   Serial.println("Setting up winding motor.");
   pinMode(WINDING_MOTOR_1, OUTPUT);
   pinMode(WINDING_MOTOR_2, OUTPUT);
-  pinMode(WINDING_MOTOR_ENABLE, OUTPUT);
   digitalWrite(WINDING_MOTOR_1, LOW);
   digitalWrite(WINDING_MOTOR_2, LOW);
   
   // Set up PWM channel
-  ledcSetup(WINDING_MOTOR_PWM, PWM_FREQ, PWM_RES);
-  
-  // Attach PWM channel to GPIO
-  ledcAttachPin(WINDING_MOTOR_ENABLE, WINDING_MOTOR_PWM);
+  enable.attachPin(WINDING_MOTOR_ENABLE, MOTOR_PWM_FREQ, PWM_RES);
 }
 
 void setWindingMotor(JsonArray arguments) {
@@ -188,12 +177,12 @@ void setWindingMotor(JsonArray arguments) {
     case 0:
       digitalWrite(WINDING_MOTOR_1, HIGH);
       digitalWrite(WINDING_MOTOR_2, LOW);
-      ledcWrite(WINDING_MOTOR_PWM, duty_cycle);
+      enable.write(duty_cycle);
       break;
     case 1:
       digitalWrite(WINDING_MOTOR_1, LOW);
       digitalWrite(WINDING_MOTOR_2, HIGH);
-      ledcWrite(WINDING_MOTOR_PWM, duty_cycle);
+      enable.write(duty_cycle);
       break;
     case 2:
       digitalWrite(WINDING_MOTOR_1, LOW);
@@ -222,7 +211,6 @@ void setup() {
 }
 
 void loop() {
-  checkServos();
   if (IMU_setup_success)
     sendIMUData();
   if (SerialBT.available()) {

@@ -19,12 +19,12 @@ int timer = 0;
 void setup() {
 
   
-  Serial.begin(9600);
+  Serial.begin(115200);
   delay(500); 
 
-  Wire.begin();
-  pinMode(inputPin, INPUT); //wait for input
+  Wire.begin(23, 22);
   delay(10);
+  
   if( myIMU.begin() )
     Serial.println("Ready.");
   else { 
@@ -39,45 +39,44 @@ void setup() {
 
 
 void printall(float input[]) {
-  for (int i = 0; i < ARRAY_SIZE; i++) {
-    Serial.println(input[i]);
+  for (int i = 0; i < counter; i++) {
+    Serial.println(input[i], 3);
   }
 }
 
 void loop()
 {
   if (Serial.available()) {
-    delay(100);
-    Serial.println("Roll");
-    printall(rolldata);
-    Serial.println("Pitch");
-    printall(pitchdata);
-    Serial.println("Yaw");
-    printall(yawdata);
-    Serial.println("XAccel");
-    printall(x_accel);
-    Serial.println("YAccel");
-    printall(y_accel);
-    Serial.println("ZAccel");
-    printall(z_accel);
-    delay(10000);
-    Serial.println("restarting...");
-    counter = 0;
-    timer = 0;
+    char c = Serial.read();
+    if (c == '\n')  {
+      delay(100);
+      Serial.println("Roll");
+      printall(rolldata);
+      Serial.println("Pitch");
+      printall(pitchdata);
+      Serial.println("Yaw");
+      printall(yawdata);
+      Serial.println("XAccel");
+      printall(x_accel);
+      Serial.println("YAccel");
+      printall(y_accel);
+      Serial.println("ZAccel");
+      printall(z_accel);
+      Serial.println("restarting...");
+      counter = 0;
+    }
   }
 
   if (counter < ARRAY_SIZE) {
     //note: these values are all acceleration and not absolute 
     rolldata[counter] = myIMU.readFloatGyroX();
     pitchdata[counter] = myIMU.readFloatGyroY();
-    rolldata[counter] = myIMU.readFloatGyroZ();
+    yawdata[counter] = myIMU.readFloatGyroZ();
     //accel data
     x_accel[counter] = myIMU.readFloatAccelX();
     y_accel[counter] = myIMU.readFloatAccelY();
     z_accel[counter] = myIMU.readFloatAccelZ();
     counter += 1;
   }
-
-  timer += 1;
   delay(DELAY);
 }
