@@ -1,24 +1,3 @@
-/******************************************************************************
-Basic_Readings.ino
-
-https://github.com/sparkfun/SparkFun_Qwiic_6DoF_LSM6DSO
-https://github.com/sparkfun/SparkFun_Qwiic_6DoF_LSM6DSO_Arduino_Library
-
-Description:
-Most basic example of use.
-
-Example using the LSM6DSO with basic settings.  This sketch collects Gyro and
-Accelerometer data every second, then presents it on the serial monitor.
-
-Development environment tested:
-Arduino IDE 1.8.2
-
-This code is released under the [MIT License](http://opensource.org/licenses/MIT).
-Please review the LICENSE.md file included with this example. If you have any questions 
-or concerns with licensing, please contact techsupport@sparkfun.com.
-Distributed as-is; no warranty is given.
-******************************************************************************/
-
 #include "SparkFunLSM6DSO.h"
 #include "Wire.h"
 #define ARRAY_SIZE 12000
