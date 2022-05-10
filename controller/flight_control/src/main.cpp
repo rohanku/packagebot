@@ -47,10 +47,10 @@ bool IMU_setup_success;
 #define IMU_ZERO_VALUE 0.22710
 
 unsigned long flight_start = 0;
-#define FLIGHT_LENGTH 5500
+#define FLIGHT_LENGTH 5800
 #define CONTROL_TIME 4000
 #define DROP_TIME 3000
-#define START_TIME 8000
+#define START_TIME 5000
 unsigned long prev_t = 0;
 float theta_dot = 0;
 float theta = 0;
@@ -106,7 +106,7 @@ void setup() {
   setupServos();
 
   turnServo(0, 90);
-  turnServo(1, 110);
+  turnServo(1, 90);
 
   flight_start = millis();
 }
@@ -157,10 +157,10 @@ void loop() {
       turnServo(1, 0);
     } else {
       turnServo(0, 0);
-      turnServo(1, -u + 20);
+      turnServo(1, -u);
     }
   } else {
-    turnServo(0, 150);
-    turnServo(1, 170);
+    turnServo(0, 180);
+    turnServo(1, 180);
   }
 }

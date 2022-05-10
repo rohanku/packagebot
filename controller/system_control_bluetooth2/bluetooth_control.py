@@ -71,6 +71,15 @@ async def run_controller(writer):
                 if event.key == pygame.K_d:
                     writer.write(b'{"command":1,"args":[1,255]}\n')
                     print("Motor backward")
+                if event.key == pygame.K_b:
+                    writer.write(b'{"command":2,"args":[]}\n')
+                    print("Start brake procedure")
+                if event.key == pygame.K_c:
+                    writer.write(b'{"command":3,"args":[]}\n')
+                    print("Start control mode")
+                if event.key == pygame.K_m:
+                    writer.write(b'{"command":4,"args":[]}\n')
+                    print("Start mount mode")
             if event.type == QUIT:
                 pygame.quit()
                 sys.exit()
